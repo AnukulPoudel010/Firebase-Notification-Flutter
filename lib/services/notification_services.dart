@@ -41,11 +41,16 @@ class NotificationServices {
 
     NotificationDetails notificationDetails = NotificationDetails(
       android: androidNotificationDetails,
-      iOS: darwinNotificationDetails
+      iOS: darwinNotificationDetails,
     );
 
-    Future.delayed(Duration.zero, (){
-      _flutterLocalNotificationsPlugin.show(0, message.notification!.title, message.notification!.body, notificationDetails);
+    Future.delayed(Duration.zero, () {
+      _flutterLocalNotificationsPlugin.show(
+        0,
+        message.notification!.title,
+        message.notification!.body,
+        notificationDetails,
+      );
     });
   }
 
@@ -56,7 +61,7 @@ class NotificationServices {
   ) async {
     // for android
     var androidInitializationSettings = AndroidInitializationSettings(
-      '@mipmap-mdpi/ic_launcher.png',
+      '@mipmap/ic_launcher',
     );
     // for ios
     // var iosInitializationSettings = DarwinInitializationSettings();
@@ -74,25 +79,25 @@ class NotificationServices {
         debugPrint("message: ${payload.payload}");
       },
       // App terminated (cold start)
-      onDidReceiveBackgroundNotificationResponse: (payload) {},
+      // onDidReceiveBackgroundNotificationResponse: (payload) {},
     );
   }
 
   void firebaseInit(BuildContext context) {
     FirebaseMessaging.onMessage.listen((message) {
       if (Platform.isAndroid) {
-      if (message.notification?.title != null) {
-        debugPrint(
-          "Notification title: ${message.notification!.title.toString()}",
-        );
-        debugPrint(
-          "Notification text: ${message.notification!.body.toString()}",
-        );
-        initLocalNotifications(context, message);
-        showNotification(message);
-      } else {
-        debugPrint("the received notification's title is null");
-      }
+        if (message.notification?.title != null) {
+          debugPrint(
+            "Notification title: ${message.notification!.title.toString()}",
+          );
+          debugPrint(
+            "Notification text: ${message.notification!.body.toString()}",
+          );
+          initLocalNotifications(context, message);
+          showNotification(message);
+        } else {
+          debugPrint("the received notification's title is null");
+        }
         showNotification(message);
       }
     });
