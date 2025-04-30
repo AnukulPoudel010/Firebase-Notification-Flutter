@@ -1,9 +1,97 @@
+import 'dart:math';
+
 import 'package:app_settings/app_settings.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationServices {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  /// show notification
+  Future<void> showNotification(RemoteMessage message) async {
+    // android notification detail
+    AndroidNotificationChannel androidNotificationChannel =
+        AndroidNotificationChannel(
+          Random.secure().nextInt(100000).toString(),
+          'High importance Notification',
+          importance: Importance.max,
+        );
+    AndroidNotificationDetails androidNotificationDetails =
+        AndroidNotificationDetails(
+          androidNotificationChannel.id,
+          androidNotificationChannel.name,
+          channelDescription: 'your channel description',
+          importance: Importance.high,
+          priority: Priority.high,
+          ticker: 'ticker',
+        );
+
+    // iOS notification detail
+    DarwinNotificationDetails darwinNotificationDetails =
+        DarwinNotificationDetails(
+          presentAlert: true,
+          // firebase does use this for ios
+          presentBadge: true,
+          presentSound: true,
+        );
+
+    NotificationDetails notificationDetails = NotificationDetails(
+      android: androidNotificationDetails,
+      iOS: darwinNotificationDetails
+    );
+
+    Future.delayed(Duration.zero, (){
+      _flutterLocalNotificationsPlugin.show(0, message.notification!.title, message.notification!.body, notificationDetails);
+    });
+  }
+
+  /// biuld context and message that is sent from firebase
+  void initLocalNotifications(
+    BuildContext context,
+    RemoteMessage message,
+  ) async {
+    // for android
+    var androidInitializationSettings = AndroidInitializationSettings(
+      '@mipmap-mdpi/ic_launcher.png',
+    );
+    // for ios
+    // var iosInitializationSettings = DarwinInitializationSettings();
+
+    var initializationSetting = InitializationSettings(
+      android: androidInitializationSettings,
+      // iOS: iosInitializationSettings,
+    );
+
+    await _flutterLocalNotificationsPlugin.initialize(
+      initializationSetting,
+      // App in foreground/background
+      onDidReceiveNotificationResponse: (payload) {
+        debugPrint("message: ${payload.payload}");
+        debugPrint("message: ${payload.payload}");
+      },
+      // App terminated (cold start)
+      onDidReceiveBackgroundNotificationResponse: (payload) {},
+    );
+  }
+
+  void firebaseInit() {
+    FirebaseMessaging.onMessage.listen((message) {
+      if (message.notification?.title != null) {
+        debugPrint(
+          "Notification title: ${message.notification!.title.toString()}",
+        );
+        debugPrint(
+          "Notification text: ${message.notification!.body.toString()}",
+        );
+        showNotification(message);
+      } else {
+        debugPrint("the received notification's title is null");
+      }
+    });
+  }
 
   void requestNotificationPermission() async {
     // ask for permission
@@ -21,6 +109,7 @@ class NotificationServices {
       debugPrint("user granted permission");
     }
     // for iphone
+    // TODO: understand this more clearly
     else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
       debugPrint("user granted provisional permission");
     } else {
