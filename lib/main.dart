@@ -26,7 +26,7 @@ class _MyAppState extends State<MyApp> {
     // for notification
     // _notification.isTokenRefresh();
     _notification.requestNotificationPermission();
-    _notification.firebaseInit();
+    _notification.firebaseInit(context);
     _notification.getDeviceToken().then(
       (token) => debugPrint("Token is: $token"),
     );

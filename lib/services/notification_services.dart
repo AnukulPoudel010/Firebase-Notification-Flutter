@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:app_settings/app_settings.dart';
@@ -77,8 +78,9 @@ class NotificationServices {
     );
   }
 
-  void firebaseInit() {
+  void firebaseInit(BuildContext context) {
     FirebaseMessaging.onMessage.listen((message) {
+      if (Platform.isAndroid) {
       if (message.notification?.title != null) {
         debugPrint(
           "Notification title: ${message.notification!.title.toString()}",
@@ -86,9 +88,12 @@ class NotificationServices {
         debugPrint(
           "Notification text: ${message.notification!.body.toString()}",
         );
+        initLocalNotifications(context, message);
         showNotification(message);
       } else {
         debugPrint("the received notification's title is null");
+      }
+        showNotification(message);
       }
     });
   }
