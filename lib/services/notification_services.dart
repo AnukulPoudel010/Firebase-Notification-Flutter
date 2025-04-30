@@ -1,6 +1,4 @@
 import 'dart:io';
-import 'dart:math';
-
 import 'package:app_settings/app_settings.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -13,52 +11,58 @@ class NotificationServices {
 
   /// show notification
   Future<void> showNotification(RemoteMessage message) async {
-    // android notification detail
-    AndroidNotificationChannel androidNotificationChannel =
-        AndroidNotificationChannel(
-          Random.secure().nextInt(100000).toString(),
-          'High importance Notification',
-          importance: Importance.max,
-        );
-    AndroidNotificationDetails androidNotificationDetails =
-        AndroidNotificationDetails(
-          androidNotificationChannel.id,
-          androidNotificationChannel.name,
-          channelDescription: 'your channel description',
-          importance: Importance.high,
-          priority: Priority.high,
-          ticker: 'ticker',
-        );
+    try {
+      // android notification detail
+      AndroidNotificationChannel androidNotificationChannel =
+          AndroidNotificationChannel(
+            message.notification!.android!.channelId.toString(),
+            'High importance Notification',
+            importance: Importance.max,
+            playSound: true,
+            showBadge: true,
+          );
+      AndroidNotificationDetails androidNotificationDetails =
+          AndroidNotificationDetails(
+            androidNotificationChannel.id,
+            androidNotificationChannel.name,
+            channelDescription: 'your channel description',
+            importance: Importance.max,
+            priority: Priority.max,
+            ticker: 'ticker',
+            showWhen: true,
+            playSound: true,
+            enableVibration: true,
+          );
 
-    // iOS notification detail
-    DarwinNotificationDetails darwinNotificationDetails =
-        DarwinNotificationDetails(
-          presentAlert: true,
-          // firebase does use this for ios
-          presentBadge: true,
-          presentSound: true,
-        );
+      // iOS notification detail
+      DarwinNotificationDetails darwinNotificationDetails =
+          DarwinNotificationDetails(
+            presentAlert: true,
+            // firebase does use this for ios
+            presentBadge: true,
+            presentSound: true,
+          );
 
-    NotificationDetails notificationDetails = NotificationDetails(
-      android: androidNotificationDetails,
-      iOS: darwinNotificationDetails,
-    );
-
-    Future.delayed(Duration.zero, () {
-      _flutterLocalNotificationsPlugin.show(
-        0,
-        message.notification!.title,
-        message.notification!.body,
-        notificationDetails,
+      NotificationDetails notificationDetails = NotificationDetails(
+        android: androidNotificationDetails,
+        iOS: darwinNotificationDetails,
       );
-    });
+
+      Future.delayed(Duration.zero, () {
+        _flutterLocalNotificationsPlugin.show(
+          0,
+          message.notification!.title,
+          message.notification!.body,
+          notificationDetails,
+        );
+      });
+    } catch (e) {
+      debugPrint("error showing notification!!");
+    }
   }
 
   /// biuld context and message that is sent from firebase
-  void initLocalNotifications(
-    BuildContext context,
-    RemoteMessage message,
-  ) async {
+  void initLocalNotifications(RemoteMessage message) async {
     // for android
     var androidInitializationSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
@@ -93,7 +97,10 @@ class NotificationServices {
           debugPrint(
             "Notification text: ${message.notification!.body.toString()}",
           );
-          initLocalNotifications(context, message);
+          debugPrint(
+            "Notification channel id: ${message.notification!.android!.channelId}",
+          );
+          initLocalNotifications(message);
           showNotification(message);
         } else {
           debugPrint("the received notification's title is null");
@@ -117,6 +124,7 @@ class NotificationServices {
     );
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
       debugPrint("user granted permission");
+      AppSettings.openAppSettings(type: AppSettingsType.notification);
     }
     // for iphone
     // TODO: understand this more clearly
